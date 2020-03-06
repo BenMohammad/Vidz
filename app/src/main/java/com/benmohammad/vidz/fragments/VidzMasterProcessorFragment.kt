@@ -1,17 +1,16 @@
 package com.benmohammad.vidz.fragments
 
+import android.app.AlertDialog
 import android.content.Context
 import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageButton
-import android.widget.ImageView
-import android.widget.ProgressBar
-import android.widget.TextView
+import android.widget.*
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -20,8 +19,13 @@ import com.benmohammad.vidz.adapter.VidzVideoOptionsAdapter
 import com.benmohammad.vidz.interfaces.VidzVideoOptionsListener
 import com.benmohammad.vidz.interfaces.VidzBaseCreatorDialogFragment
 import com.benmohammad.vidz.utils.Constants
+import com.benmohammad.vidz.utils.VidzCommonMethods
+import com.github.hiteshsondhi88.libffmpeg.FFmpeg
+import com.github.hiteshsondhi88.libffmpeg.FFmpegLoadBinaryResponseHandler
+import com.github.hiteshsondhi88.libffmpeg.exceptions.FFmpegNotSupportedException
 import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.ui.PlayerView
+import org.jcodec.movtool.Util
 import java.io.File
 
 class VidzMasterProcessorFragment : Fragment(), VidzBaseCreatorDialogFragment.CallBacks,
@@ -38,6 +42,7 @@ class VidzMasterProcessorFragment : Fragment(), VidzBaseCreatorDialogFragment.Ca
     private var handler : Handler = Handler()
     private var ibGallery: ImageButton? = null
     private var ibCamera : ImageButton? = null
+    private var masterVideoFile: File? = null
     private var playbackPosition: Long = 0;
     private var currentWindow: Int = 0
     private var ePlayer: PlayerView? = null
@@ -94,6 +99,57 @@ class VidzMasterProcessorFragment : Fragment(), VidzBaseCreatorDialogFragment.Ca
         rvVideoOptions.adapter = vidzVideoOptionsAdapter
         vidzVideoOptionsAdapter.notifyDataSetChanged()
 
+        //checkStoragePermission(Constants.PERMISSION_STORAGE)
+
+        try {
+            FFmpeg.getInstance(activity).loadBinary(object: FFmpegLoadBinaryResponseHandler {
+                override fun onFailure() {
+                    Log.v("FFmpeg", "Failed to load FFmpeg library")
+                }
+
+                override fun onSuccess() {
+                    Log.v("FFmpeg", "FFmpeg library loaded")
+                }
+
+                override fun onStart() {
+                    Log.v("FFmpeg", "FFmpeg started")
+                }
+
+                override fun onFinish() {
+                    Log.v("FFmpeg", "FFmpeg stopped")
+                }
+            })
+        } catch (e: FFmpegNotSupportedException) {
+            e.printStackTrace()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        ibGallery?.setOnClickListener {
+            openGallery()
+        }
+
+        ibCamera?.setOnClickListener {
+            openCamera()
+        }
+
+        tvSave?.setOnClickListener {
+            AlertDialog.Builder(context!!)
+                .setTitle(Constants.APP_NAME)
+                .setMessage(getString(R.string.save_video))
+                .setPositiveButton(getString(R.string.Continue)) {
+                    dialog, which ->
+                    if(masterVideoFile != null) {
+//                        val outputFile = createSaveVideoFile()
+//                        VidzCommonMethods.copyFile(masterVideoFile, outputFile)
+//                        Toast.makeText(context, R.string.successfully_saved, Toast.LENGTH_SHORT).show()
+
+                        tvSave!!.visibility = View.GONE
+
+                    }
+                }
+        }
+
 
 
     }
@@ -131,6 +187,7 @@ class VidzMasterProcessorFragment : Fragment(), VidzBaseCreatorDialogFragment.Ca
     }
 
     override fun videoOption(option: String) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+
+
     }
 }
