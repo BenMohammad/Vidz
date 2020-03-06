@@ -1,4 +1,4 @@
-package com.benmohammad.vidz.adapter
+package com.benmohammad.vidz.interfaces
 
 interface VidzVideoOptionsListener {
 

@@ -17,14 +17,15 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.benmohammad.vidz.R
 import com.benmohammad.vidz.adapter.VidzVideoOptionsAdapter
-import com.benmohammad.vidz.adapter.VidzVideoOptionsListener
+import com.benmohammad.vidz.interfaces.VidzVideoOptionsListener
 import com.benmohammad.vidz.interfaces.VidzBaseCreatorDialogFragment
 import com.benmohammad.vidz.utils.Constants
 import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.ui.PlayerView
 import java.io.File
 
-class VidzMasterProcessorFragment : Fragment(), VidzBaseCreatorDialogFragment.CallBacks, VidzVideoOptionsListener {
+class VidzMasterProcessorFragment : Fragment(), VidzBaseCreatorDialogFragment.CallBacks,
+    VidzVideoOptionsListener {
 
     private lateinit var rootView: View
     private var tagName: String = VidzMasterProcessorFragment::class.java.simpleName

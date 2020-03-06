@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
 import com.benmohammad.vidz.R
+import com.benmohammad.vidz.interfaces.VidzVideoOptionsListener
 import com.benmohammad.vidz.utils.Constants
 
 class VidzVideoOptionsAdapter(videoOptions: ArrayList<String>, val context: Context, vidzVideoOptionListener : VidzVideoOptionsListener, orientationLand: Boolean )
