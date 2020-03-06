@@ -17,15 +17,14 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.benmohammad.vidz.R
 import com.benmohammad.vidz.adapter.VidzVideoOptionsAdapter
+import com.benmohammad.vidz.adapter.VidzVideoOptionsListener
 import com.benmohammad.vidz.interfaces.VidzBaseCreatorDialogFragment
-import com.benmohammad.vidz.interfaces.VidzFFMpegCallback
-import com.benmohammad.vidz.interfaces.VidzOptionListener
+import com.benmohammad.vidz.utils.Constants
 import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.ui.PlayerView
-import kotlinx.android.synthetic.main.vidz_layout_custom_exo_player.*
 import java.io.File
 
-class VidzMasterProcessorFragment : Fragment(), VidzBaseCreatorDialogFragment.CallBacks {
+class VidzMasterProcessorFragment : Fragment(), VidzBaseCreatorDialogFragment.CallBacks, VidzVideoOptionsListener {
 
     private lateinit var rootView: View
     private var tagName: String = VidzMasterProcessorFragment::class.java.simpleName
@@ -67,6 +66,34 @@ class VidzMasterProcessorFragment : Fragment(), VidzBaseCreatorDialogFragment.Ca
 
     private fun initView(rootView: View) {
         ePlayer = rootView?.findViewById(R.id.ePlayer)
+        tvSave = rootView?.findViewById(R.id.tvSave)
+        pbLoading = rootView?.findViewById(R.id.pbLoading)
+        ibGallery = rootView?.findViewById(R.id.ibGallery)
+        ibCamera = rootView?.findViewById(R.id.ibCamera)
+        progresssBar = rootView?.findViewById(R.id.progressBar)!!
+        tvVideoProcessing = rootView?.findViewById(R.id.tvVideoProcessing)
+        tvInfo = rootView?.findViewById(R.id.tvInfo)
+
+        preferences =  activity!!.getSharedPreferences("fetch_preferences", Context.MODE_PRIVATE)
+
+        rvVideoOptions = rootView?.findViewById(R.id.rvVideoOptions)
+        linearLayoutManager =  LinearLayoutManager(activity!!.applicationContext)
+        linearLayoutManager.orientation = LinearLayoutManager.HORIZONTAL
+
+        rvVideoOptions.layoutManager =  linearLayoutManager
+        mContext = context
+        videoOptions.add(Constants.TRIM)
+        videoOptions.add(Constants.MUSIC)
+        videoOptions.add(Constants.PLAYBACK)
+        videoOptions.add(Constants.TEXT)
+        videoOptions.add(Constants.OBJECT)
+        videoOptions.add(Constants.MERGE)
+
+        vidzVideoOptionsAdapter = VidzVideoOptionsAdapter(videoOptions, activity!!.applicationContext, this, orientationLand)
+        rvVideoOptions.adapter = vidzVideoOptionsAdapter
+        vidzVideoOptionsAdapter.notifyDataSetChanged()
+
+
 
     }
 
@@ -99,6 +126,10 @@ class VidzMasterProcessorFragment : Fragment(), VidzBaseCreatorDialogFragment.Ca
     }
 
     override fun openCamera() {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun videoOption(option: String) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 }
