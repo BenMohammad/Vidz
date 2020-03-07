@@ -1,17 +1,25 @@
 package com.benmohammad.vidz.fragments
 
+import android.app.Activity
 import android.app.AlertDialog
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.os.Handler
+import android.provider.Settings
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -20,10 +28,7 @@ import com.benmohammad.vidz.adapter.VidzVideoOptionsAdapter
 import com.benmohammad.vidz.interfaces.VidzVideoOptionsListener
 import com.benmohammad.vidz.interfaces.VidzBaseCreatorDialogFragment
 import com.benmohammad.vidz.interfaces.VidzFFMpegCallback
-import com.benmohammad.vidz.utils.Constants
-import com.benmohammad.vidz.utils.VideoFrom
-import com.benmohammad.vidz.utils.VidzCommonMethods
-import com.benmohammad.vidz.utils.VidzVideoUtils
+import com.benmohammad.vidz.utils.*
 import com.github.hiteshsondhi88.libffmpeg.FFmpeg
 import com.github.hiteshsondhi88.libffmpeg.FFmpegLoadBinaryResponseHandler
 import com.github.hiteshsondhi88.libffmpeg.exceptions.FFmpegNotSupportedException
@@ -34,6 +39,9 @@ import com.google.android.exoplayer2.trackselection.TrackSelectionArray
 import com.google.android.exoplayer2.ui.PlayerView
 import org.jcodec.movtool.Util
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.*
+import kotlin.collections.ArrayList
 
 class VidzMasterProcessorFragment : Fragment(), VidzBaseCreatorDialogFragment.CallBacks,
     VidzVideoOptionsListener, VidzFFMpegCallback {
@@ -150,11 +158,11 @@ class VidzMasterProcessorFragment : Fragment(), VidzBaseCreatorDialogFragment.Ca
                 .setPositiveButton(getString(R.string.Continue)) {
                     dialog, which ->
                     if(masterVideoFile != null) {
-//                        val outputFile = createSaveVideoFile()
-//                        VidzCommonMethods.copyFile(masterVideoFile, outputFile)
-//                        Toast.makeText(context, R.string.successfully_saved, Toast.LENGTH_SHORT).show()
-//
-//                        tvSave!!.visibility = View.GONE
+                        val outputFile = createSaveVideoFile()
+                        VidzCommonMethods.copyFile(masterVideoFile, outputFile)
+                        Toast.makeText(context, R.string.successfully_saved, Toast.LENGTH_SHORT).show()
+
+                        tvSave!!.visibility = View.GONE
 
                     }
                 }
@@ -338,6 +346,110 @@ class VidzMasterProcessorFragment : Fragment(), VidzBaseCreatorDialogFragment.Ca
 
             }
         }
+    }
+
+    private fun checkStoragePermission(permission: Array<String>) {
+        val blockedPermission = checkHasPermission(activity, permission)
+        if(blockedPermission != null && blockedPermission.size > 0) {
+            val isBlocked = isPermissionBlocked(activity, blockedPermission)
+            if(isBlocked) {
+                callPermissionSettings()
+            } else {
+                requestPermissions(permission, Constants.ADD_ITEMS_IN_STORAGE)
+            }
+        } else {
+            itemStorageAction()
+        }
+    }
+    private fun callPermissionSettings() {
+        val intent = Intent()
+        intent.action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+        val uri = Uri.fromParts("package", context!!.applicationContext.packageName, null)
+        intent.data = uri
+
+        startActivityForResult(intent, 300)
+    }
+
+    private fun itemStorageAction() {
+        val sessionManager = VidzSessionManager()
+
+        if(sessionManager.isFirstTime(activity!!)) {
+            VidzUtils.copyFileToInternalStorage(
+                R.drawable.sticker_1,
+                "sticker_1",
+                context!!
+            )
+
+            VidzUtils.copyFileToInternalStorage(
+                R.drawable.sticker_2,
+                "sticker_2",
+                context!!
+            )
+
+            VidzUtils.copyFileToInternalStorage(
+                R.drawable.sticker_3,
+                "sticker_3",
+                context!!
+            )
+
+            VidzUtils.copyFileToInternalStorage(
+                R.drawable.sticker_4,
+                "sticker_4",
+                context!!
+            )
+
+            VidzUtils.copyFileToInternalStorage(
+                R.drawable.sticker_5,
+                "sticker_5",
+                context!!
+            )
+
+            sessionManager.setFirstTime(activity!!, false)
+        }
+    }
+
+    private var isFirstTimePermission: Boolean
+    get() = preferences.getBoolean("isFirstTimePermission", false)
+    set(isFirstTime) = preferences.edit().putBoolean("isFirstTimePermission", isFirstTime).apply()
+
+    private val isMarshMallow: Boolean
+    get() =(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) or (Build.VERSION.SDK_INT == Build.VERSION_CODES.LOLLIPOP_MR1)
+
+    fun checkHasPermission(context: Activity?, permissions: Array<String>?) : ArrayList<String> {
+        permissionList = ArrayList()
+        if(isMarshMallow && context != null && permissions != null) {
+            for(permission in permissions) {
+                if(ContextCompat.checkSelfPermission(context, permission) != PackageManager.PERMISSION_GRANTED) {
+                    permissionList.add(permission)
+                }
+            }
+        }
+
+        return permissionList
+    }
+
+    fun isPermissionBlocked(context: Activity?, permissions: ArrayList<String>?) : Boolean {
+        if(isMarshMallow && context != null && permissions != null && isFirstTimePermission) {
+            for(permission in permissions) {
+                if(!ActivityCompat.shouldShowRequestPermissionRationale(context, permission)) {
+                    return true
+                }
+            }
+        }
+
+        return false
+    }
+
+
+    private fun createSaveVideoFile(): File {
+        val timeStamp: String = SimpleDateFormat(Constants.DATE_FORMAT, Locale.getDefault()).format(Date())
+        val imageFileName: String = Constants.APP_NAME + timeStamp+ "_"
+        val path = Environment.getExternalStorageDirectory().toString()+ File.separator + Constants.APP_NAME + File.separator + Constants.MY_VIDEOS + File.separator
+        val folder = File(path)
+        if(!folder.exists())
+            folder.mkdirs()
+
+        return File.createTempFile(imageFileName, Constants.VIDEO_FORMAT, folder)
     }
 
 }
