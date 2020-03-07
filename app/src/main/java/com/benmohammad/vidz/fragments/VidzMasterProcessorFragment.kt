@@ -1,6 +1,8 @@
 package com.benmohammad.vidz.fragments
 
+import android.Manifest
 import android.app.Activity
+import android.app.Activity.RESULT_OK
 import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
@@ -12,6 +14,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.os.Handler
+import android.provider.MediaStore
 import android.provider.Settings
 import android.util.Log
 import android.view.LayoutInflater
@@ -20,10 +23,13 @@ import android.view.ViewGroup
 import android.widget.*
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.benmohammad.vidz.R
+import com.benmohammad.vidz.VidzTrimmerActivity
+import com.benmohammad.vidz.VidzVideoEditor
 import com.benmohammad.vidz.adapter.VidzVideoOptionsAdapter
 import com.benmohammad.vidz.interfaces.VidzVideoOptionsListener
 import com.benmohammad.vidz.interfaces.VidzBaseCreatorDialogFragment
@@ -96,7 +102,7 @@ class VidzMasterProcessorFragment : Fragment(), VidzBaseCreatorDialogFragment.Ca
         ibCamera = rootView?.findViewById(R.id.ibCamera)
         progresssBar = rootView?.findViewById(R.id.progressBar)!!
         tvVideoProcessing = rootView.findViewById(R.id.tvVideoProcessing)
-        tvInfo = rootView?.findViewById(R.id.tvInfo)
+        tvInfo = rootView.findViewById(R.id.tvInfo)
 
         preferences =  activity!!.getSharedPreferences("fetch_preferences", Context.MODE_PRIVATE)
 
@@ -236,13 +242,41 @@ class VidzMasterProcessorFragment : Fragment(), VidzBaseCreatorDialogFragment.Ca
         }
     }
 
-    override fun openGallery() {
+    fun checkAllPermission(permission: Array<String>) {
+        val blockedPermission = checkHasPermission(activity, permission)
+        if(blockedPermission != null && blockedPermission.size > 0) {
+            val isBlocked = isPermissionBlocked(activity, blockedPermission)
+            if(isBlocked) {
+                callPermissionSettings()
+            } else {
+                requestPermissions(permission, Constants.RECORD_VIDEO)
+            }
+        } else {
+            val cameraIntent = Intent(MediaStore.ACTION_VIDEO_CAPTURE)
+            videoFile = VidzUtils.createVideoFile(context!!)
+            Log.v(tagName, "videoPath1: " +videoFile!!.absolutePath)
+            videoUri = FileProvider.getUriForFile(context!!, "com.benmohammad.vidz.provider", videoFile!!)
+            cameraIntent.putExtra(MediaStore.EXTRA_DURATION_LIMIT, 240)
+            cameraIntent.putExtra(MediaStore.EXTRA_VIDEO_QUALITY, 1)
+            cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, videoFile)
+            startActivityForResult(cameraIntent, Constants.RECORD_VIDEO)
+        }
 
+    }
+
+    fun checkPermission(requestCode: Int, permission: String) {
+        requestPermissions(arrayOf(permission), requestCode)
+    }
+
+    override fun openGallery() {
+        releasePlayer()
+        checkPermission(Constants.VIDEO_GALLERY, Manifest.permission.READ_EXTERNAL_STORAGE)
 
     }
 
     override fun openCamera() {
-
+        releasePlayer()
+        checkAllPermission(Constants.PERMISSION_CAMERA)
 
     }
 
@@ -408,6 +442,103 @@ class VidzMasterProcessorFragment : Fragment(), VidzBaseCreatorDialogFragment.Ca
         }
     }
 
+    private fun setFilePath(resultCode: Int, data: Intent, mode: Int) {
+        if(resultCode == RESULT_OK) {
+            try {
+                val selectedImage = data.data
+                val filePathColumn = arrayOf(MediaStore.MediaColumns.DATA)
+                val cursor = context!!.contentResolver
+                    .query(selectedImage!!, filePathColumn, null, null, null)
+                if(cursor != null) {
+                    cursor.moveToFirst()
+                    val columnIndex = cursor
+                        .getColumnIndex(filePathColumn[0])
+                    cursor.close()
+                    val filePath = cursor.getString(columnIndex)
+                    if(mode == Constants.VIDEO_GALLERY) {
+                        Log.v(tagName, "filepath: $filePath")
+                        masterVideoFile = File(filePath)
+
+                        val extension = VidzCommonMethods.getFileExtension(masterVideoFile!!.absolutePath)
+
+                        val timeInMillis = VidzUtils.getVideoDuration(context!!, masterVideoFile!!)
+                        Log.v(tagName, "timeInMillis: $timeInMillis")
+                        val duration = VidzCommonMethods.convertDurationInMinutes(timeInMillis)
+                        Log.v(tagName, "Video duration: $duration")
+
+
+                        if(duration < Constants.VIDEO_LIMIT) {
+                            if(extension == Constants.AVI_FORMAT) {
+                                convertAviToMp4()
+                            } else {
+                                playbackPosition = 0
+                                currentWindow = 0
+                                initializePlayer()
+                            }
+                        } else {
+                            Toast.makeText(activity, getString(R.string.error_select_smaller_video), Toast.LENGTH_SHORT).show()
+
+                            isLargeVideo = true
+                            val uri = Uri.fromFile(masterVideoFile)
+                            val intent = Intent(context, VidzTrimmerActivity::class.java)
+                            intent.putExtra("VideoPath", filePath)
+                            intent.putExtra("VideoDuration", VidzCommonMethods.getMediaDuration(context, uri))
+                            startActivityForResult(intent, Constants.MAIN_VIDEO_TRIM)
+                        }
+                    }
+                }
+            } catch(e: Exception) {
+
+            }
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if(resultCode == Activity.RESULT_CANCELED) return
+
+        when(requestCode) {
+            Constants.VIDEO_GALLERY -> {
+                data?.let {
+                    setFilePath(resultCode, it, Constants.VIDEO_GALLERY)
+                }
+            }
+
+            Constants.RECORD_VIDEO -> {
+                data?.let {
+                    Log.v(tagName, "data: ${data.data}")
+
+                    if(resultCode == RESULT_OK) {
+                        masterVideoFile = VidzCommonMethods.writeIntoFile(activity, data, videoFile)
+
+                        val timeInMillis = VidzUtils.getVideoDuration(context!!, masterVideoFile!!)
+                        Log.v(tagName, "Time in Millis: $timeInMillis")
+
+                        val duration = VidzCommonMethods.convertDurationInMinutes(timeInMillis)
+                        Log.v(tagName, "Duration: $duration")
+
+                        if(duration < Constants.VIDEO_LIMIT) {
+                            playbackPosition = 0
+                            currentWindow = 0
+                            initializePlayer()
+                        } else {
+                            Toast.makeText(activity, getString(R.string.error_select_smaller_video), Toast.LENGTH_SHORT).show()
+
+                            val uri = Uri.fromFile(masterVideoFile)
+                            val intent = Intent(context, VidzTrimmerActivity::class.java)
+                            intent.putExtra("VideoPath", masterVideoFile!!.absolutePath)
+                            intent.putExtra("VideoDuration", VidzCommonMethods.getMediaDuration(context, uri))
+                            startActivityForResult(intent, Constants.MAIN_VIDEO_TRIM)
+                        }
+                    }
+                }
+            }
+
+
+        }
+    }
+
     private var isFirstTimePermission: Boolean
     get() = preferences.getBoolean("isFirstTimePermission", false)
     set(isFirstTime) = preferences.edit().putBoolean("isFirstTimePermission", isFirstTime).apply()
@@ -460,10 +591,28 @@ class VidzMasterProcessorFragment : Fragment(), VidzBaseCreatorDialogFragment.Ca
                 dialog, which -> val outputFile = VidzUtils.createVideoFile(context!!)
                 Log.v(tagName, "outputFile: $outputFile")
 
+                VidzVideoEditor.with(context!!)
+                    .setType(Constants.CONVERT_AVI_TO_MP4)
+                    .setFile(masterVideoFile!!)
+                    .setOutputPath(outputFile.path)
+                    .setCallback(this)
+                    .main()
 
-
-
+                showLoading(true)
             }
+            .setNegativeButton(R.string.no) {
+                dialog, which -> releasePlayer()
+            }
+            .show()
+    }
+    private fun releasePlayer() {
+        if(exoplayer != null) {
+            playbackPosition = exoplayer?.currentPosition!!
+            currentWindow = exoplayer?.currentWindowIndex!!
+            playWhenReady = exoplayer?.playWhenReady
+            exoplayer?.release()
+            exoplayer = null
+        }
     }
 
 }

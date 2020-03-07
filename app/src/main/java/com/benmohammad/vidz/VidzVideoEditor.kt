@@ -7,10 +7,8 @@ import com.benmohammad.vidz.utils.Constants
 import com.benmohammad.vidz.utils.VidzOutputType
 import com.github.hiteshsondhi88.libffmpeg.ExecuteBinaryResponseHandler
 import com.github.hiteshsondhi88.libffmpeg.FFmpeg
-import com.github.hiteshsondhi88.libffmpeg.FFmpegLoadBinaryResponseHandler
 import com.github.hiteshsondhi88.libffmpeg.exceptions.FFmpegCommandAlreadyRunningException
 import java.io.File
-import java.io.IOError
 import java.io.IOException
 
 class VidzVideoEditor private constructor(private val context: Context){
