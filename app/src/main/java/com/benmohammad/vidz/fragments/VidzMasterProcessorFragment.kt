@@ -18,6 +18,7 @@ import com.benmohammad.vidz.R
 import com.benmohammad.vidz.adapter.VidzVideoOptionsAdapter
 import com.benmohammad.vidz.interfaces.VidzVideoOptionsListener
 import com.benmohammad.vidz.interfaces.VidzBaseCreatorDialogFragment
+import com.benmohammad.vidz.interfaces.VidzFFMpegCallback
 import com.benmohammad.vidz.utils.Constants
 import com.benmohammad.vidz.utils.VidzCommonMethods
 import com.github.hiteshsondhi88.libffmpeg.FFmpeg
@@ -29,7 +30,9 @@ import org.jcodec.movtool.Util
 import java.io.File
 
 class VidzMasterProcessorFragment : Fragment(), VidzBaseCreatorDialogFragment.CallBacks,
-    VidzVideoOptionsListener {
+    VidzVideoOptionsListener, VidzFFMpegCallback {
+
+
 
     private lateinit var rootView: View
     private var tagName: String = VidzMasterProcessorFragment::class.java.simpleName
@@ -55,6 +58,7 @@ class VidzMasterProcessorFragment : Fragment(), VidzBaseCreatorDialogFragment.Ca
     private var videoOptions: ArrayList<String> = ArrayList()
     private var orientationLand: Boolean = false
     private var tvSave: ImageView? = null
+    private var isLargeVideo: Boolean? = false
     private var mContext: Context? = null
     private var tvInfo: TextView? = null
 
@@ -70,14 +74,14 @@ class VidzMasterProcessorFragment : Fragment(), VidzBaseCreatorDialogFragment.Ca
 
     }
 
-    private fun initView(rootView: View) {
+    private fun initView(rootView: View?    ) {
         ePlayer = rootView?.findViewById(R.id.ePlayer)
         tvSave = rootView?.findViewById(R.id.tvSave)
         pbLoading = rootView?.findViewById(R.id.pbLoading)
         ibGallery = rootView?.findViewById(R.id.ibGallery)
         ibCamera = rootView?.findViewById(R.id.ibCamera)
         progresssBar = rootView?.findViewById(R.id.progressBar)!!
-        tvVideoProcessing = rootView?.findViewById(R.id.tvVideoProcessing)
+        tvVideoProcessing = rootView.findViewById(R.id.tvVideoProcessing)
         tvInfo = rootView?.findViewById(R.id.tvInfo)
 
         preferences =  activity!!.getSharedPreferences("fetch_preferences", Context.MODE_PRIVATE)
@@ -143,14 +147,20 @@ class VidzMasterProcessorFragment : Fragment(), VidzBaseCreatorDialogFragment.Ca
 //                        val outputFile = createSaveVideoFile()
 //                        VidzCommonMethods.copyFile(masterVideoFile, outputFile)
 //                        Toast.makeText(context, R.string.successfully_saved, Toast.LENGTH_SHORT).show()
-
-                        tvSave!!.visibility = View.GONE
+//
+//                        tvSave!!.visibility = View.GONE
 
                     }
                 }
+                .setNegativeButton(R.string.cancel) {dialog, which ->  }
+                .show()
         }
 
-
+        tvInfo?.setOnClickListener {
+            VidzVideoOptionFragment.newInstance().apply {
+                setHelper(this@VidzMasterProcessorFragment)
+            }.show(fragmentManager!!, "VidzVideoOptionFragment")
+        }
 
     }
 
@@ -190,4 +200,25 @@ class VidzMasterProcessorFragment : Fragment(), VidzBaseCreatorDialogFragment.Ca
 
 
     }
+
+    override fun onProgress(progress: String) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun onSuccess(convertedFile: File, type: String) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun onFailure(error: Exception) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun onNotAvailable(error: Exception) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun onFinish() {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
 }
