@@ -3,6 +3,7 @@ package com.benmohammad.vidz.fragments
 import android.app.AlertDialog
 import android.content.Context
 import android.content.SharedPreferences
+import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
@@ -20,11 +21,16 @@ import com.benmohammad.vidz.interfaces.VidzVideoOptionsListener
 import com.benmohammad.vidz.interfaces.VidzBaseCreatorDialogFragment
 import com.benmohammad.vidz.interfaces.VidzFFMpegCallback
 import com.benmohammad.vidz.utils.Constants
+import com.benmohammad.vidz.utils.VideoFrom
 import com.benmohammad.vidz.utils.VidzCommonMethods
+import com.benmohammad.vidz.utils.VidzVideoUtils
 import com.github.hiteshsondhi88.libffmpeg.FFmpeg
 import com.github.hiteshsondhi88.libffmpeg.FFmpegLoadBinaryResponseHandler
 import com.github.hiteshsondhi88.libffmpeg.exceptions.FFmpegNotSupportedException
-import com.google.android.exoplayer2.SimpleExoPlayer
+import com.google.android.exoplayer2.*
+import com.google.android.exoplayer2.source.TrackGroupArray
+import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
+import com.google.android.exoplayer2.trackselection.TrackSelectionArray
 import com.google.android.exoplayer2.ui.PlayerView
 import org.jcodec.movtool.Util
 import java.io.File
@@ -164,12 +170,39 @@ class VidzMasterProcessorFragment : Fragment(), VidzBaseCreatorDialogFragment.Ca
 
     }
 
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        if(newConfig!!.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            Log.v(tagName, "orientation: ORIENTATION LANDSCAPE")
+            orientationLand = true
+        } else if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
+            Log.v(tagName, "orientation: ORIENTATION PORTRAIT")
+            orientationLand = false
+        }
+
+        vidzVideoOptionsAdapter = VidzVideoOptionsAdapter(videoOptions, activity!!.applicationContext, this, orientationLand)
+        rvVideoOptions.adapter = vidzVideoOptionsAdapter
+        vidzVideoOptionsAdapter.notifyDataSetChanged()
+    }
+
     override fun onDidNothing() {
-        //initializePlayer()
+        initializePlayer()
     }
 
     override fun onFileProcessed(file: File) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        tvSave!!.visibility = View.VISIBLE
+        masterVideoFile = file
+        isLargeVideo = false
+
+        val extension = VidzCommonMethods.getFileExtension(masterVideoFile!!.absolutePath)
+
+        if(extension == Constants.AVI_FORMAT) {
+            //convertAviToMp4()
+        } else {
+            playbackPosition = 0
+            currentWindow = 0
+            initializePlayer()
+        }
     }
 
     override fun getFile(): File? {
@@ -177,7 +210,7 @@ class VidzMasterProcessorFragment : Fragment(), VidzBaseCreatorDialogFragment.Ca
     }
 
     override fun reInitPlayer() {
-        //initializePlayer()
+        initializePlayer()
     }
 
     override fun onAudioFileProcessed(convertedAudioFile: File) {
@@ -185,15 +218,24 @@ class VidzMasterProcessorFragment : Fragment(), VidzBaseCreatorDialogFragment.Ca
     }
 
     override fun showLoading(isShow: Boolean) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        if(isShow) {
+            progresssBar.visibility = View.VISIBLE
+            tvVideoProcessing!!.visibility = View.VISIBLE
+            //setProgressValue()
+        } else {
+            progresssBar.visibility = View.INVISIBLE
+            tvVideoProcessing!!.visibility = View.INVISIBLE
+        }
     }
 
     override fun openGallery() {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+
+
     }
 
     override fun openCamera() {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+
+
     }
 
     override fun videoOption(option: String) {
@@ -219,6 +261,83 @@ class VidzMasterProcessorFragment : Fragment(), VidzBaseCreatorDialogFragment.Ca
 
     override fun onFinish() {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    private fun initializePlayer() {
+        try {
+            tvInfo!!.visibility = View.GONE
+
+            ePlayer?.useController = true
+            exoplayer = ExoPlayerFactory.newSimpleInstance(
+                activity,
+                DefaultRenderersFactory(activity),
+                DefaultTrackSelector(), DefaultLoadControl())
+
+            ePlayer?.player = exoplayer
+            exoplayer?.playWhenReady = false
+            exoplayer?.addListener(playerListener)
+
+            exoplayer?.prepare(VidzVideoUtils.buildMediaSource(Uri.fromFile(masterVideoFile), VideoFrom.LOCAL))
+
+            exoplayer?.seekTo(0)
+
+            exoplayer?.seekTo(currentWindow, playbackPosition)
+        } catch (exception: Exception) {
+            Log.v(tagName, "exception: " + exception.localizedMessage)
+        }
+    }
+
+    private val playerListener = object : Player.EventListener {
+        override fun onPlaybackParametersChanged(playbackParameters: PlaybackParameters?) {
+
+        }
+
+        override fun onSeekProcessed() {
+
+        }
+
+        override fun onTracksChanged(
+            trackGroups: TrackGroupArray?,
+            trackSelections: TrackSelectionArray?
+        ) {
+
+        }
+
+        override fun onPlayerError(error: ExoPlaybackException?) {
+            Log.v(tagName, "onPlayerError: ${error.toString()}")
+            Toast.makeText(mContext, "Video format is not supported", Toast.LENGTH_LONG).show()
+
+        }
+
+        override fun onLoadingChanged(isLoading: Boolean) {
+            pbLoading?.visibility = if (isLoading) View.VISIBLE else View.GONE
+        }
+
+        override fun onPositionDiscontinuity(reason: Int) {
+
+        }
+
+        override fun onRepeatModeChanged(repeatMode: Int) {
+
+        }
+
+        override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
+
+        }
+
+        override fun onTimelineChanged(timeline: Timeline?, manifest: Any?, reason: Int) {
+
+        }
+
+        override fun onPlayerStateChanged(playWhenReady: Boolean, playbackState: Int) {
+            if(playWhenReady && playbackState == Player.STATE_READY) {
+
+            } else if(playWhenReady) {
+
+            } else {
+
+            }
+        }
     }
 
 }
