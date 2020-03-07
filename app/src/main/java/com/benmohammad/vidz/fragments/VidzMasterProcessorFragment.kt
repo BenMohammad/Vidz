@@ -117,7 +117,7 @@ class VidzMasterProcessorFragment : Fragment(), VidzBaseCreatorDialogFragment.Ca
         rvVideoOptions.adapter = vidzVideoOptionsAdapter
         vidzVideoOptionsAdapter.notifyDataSetChanged()
 
-        //checkStoragePermission(Constants.PERMISSION_STORAGE)
+        checkStoragePermission(Constants.PERMISSION_STORAGE)
 
         try {
             FFmpeg.getInstance(activity).loadBinary(object: FFmpegLoadBinaryResponseHandler {
@@ -205,7 +205,7 @@ class VidzMasterProcessorFragment : Fragment(), VidzBaseCreatorDialogFragment.Ca
         val extension = VidzCommonMethods.getFileExtension(masterVideoFile!!.absolutePath)
 
         if(extension == Constants.AVI_FORMAT) {
-            //convertAviToMp4()
+            convertAviToMp4()
         } else {
             playbackPosition = 0
             currentWindow = 0
@@ -450,6 +450,20 @@ class VidzMasterProcessorFragment : Fragment(), VidzBaseCreatorDialogFragment.Ca
             folder.mkdirs()
 
         return File.createTempFile(imageFileName, Constants.VIDEO_FORMAT, folder)
+    }
+
+    private fun convertAviToMp4() {
+        AlertDialog.Builder(context!!)
+            .setTitle(Constants.APP_NAME)
+            .setMessage(getString(R.string.not_supported_video))
+            .setPositiveButton(getString(R.string.yes)) {
+                dialog, which -> val outputFile = VidzUtils.createVideoFile(context!!)
+                Log.v(tagName, "outputFile: $outputFile")
+
+
+
+
+            }
     }
 
 }
