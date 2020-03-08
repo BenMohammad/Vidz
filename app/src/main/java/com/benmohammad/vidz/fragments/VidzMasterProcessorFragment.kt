@@ -43,6 +43,7 @@ import com.google.android.exoplayer2.source.TrackGroupArray
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
 import com.google.android.exoplayer2.trackselection.TrackSelectionArray
 import com.google.android.exoplayer2.ui.PlayerView
+import com.google.android.exoplayer2.util.Util.*
 import org.jcodec.movtool.Util
 import java.io.File
 import java.text.SimpleDateFormat
@@ -201,6 +202,111 @@ class VidzMasterProcessorFragment : Fragment(), VidzBaseCreatorDialogFragment.Ca
 
     override fun onDidNothing() {
         initializePlayer()
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        when(requestCode) {
+            Constants.VIDEO_GALLERY -> {
+                for(permission in permissions) {
+                    if(ActivityCompat.shouldShowRequestPermissionRationale(activity as Activity, permission)) {
+                        Toast.makeText(context, "Permission Denied", Toast.LENGTH_SHORT).show()
+                        break
+                    } else {
+                        if(ActivityCompat.checkSelfPermission(
+                                activity as Activity,
+                                permission
+                            ) == PackageManager.PERMISSION_GRANTED) {
+                            VidzUtils.refreshGalleryAlone(context!!)
+                            val i = Intent(Intent.ACTION_PICK, MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
+                            i.type = "video/*"
+                            i.putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("video/*"))
+                            startActivityForResult(i, Constants.VIDEO_GALLERY)
+                        } else {
+                            callPermissionSettings()
+                        }
+                    }
+                }
+                return
+            }
+
+            Constants.AUDIO_GALLERY -> {
+                for(permission in permissions) {
+                    if(ActivityCompat.shouldShowRequestPermissionRationale(activity as Activity, permission)) {
+                        Toast.makeText(context, "Permission Denied!!", Toast.LENGTH_SHORT).show()
+                    } else {
+                        if(ActivityCompat.checkSelfPermission(
+                                activity as Activity,  permission
+                            ) == PackageManager.PERMISSION_GRANTED) {
+                            VidzUtils.refreshGalleryAlone(context!!)
+                            val i = Intent(Intent.ACTION_PICK, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI)
+                            i.type = "video/*"
+                            i.putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("video/*"))
+                            startActivityForResult(i, Constants.AUDIO_GALLERY)
+                        } else {
+                            callPermissionSettings()
+                        }
+                    }
+                }
+                return
+            }
+
+            Constants.RECORD_VIDEO -> {
+                for(permission in permissions) {
+                    if(ActivityCompat.shouldShowRequestPermissionRationale(activity as Activity, permission)) {
+                        Toast.makeText(context, "Permission Denied!!!", Toast.LENGTH_SHORT).show()
+                        break
+                    } else {
+                        if(ActivityCompat.checkSelfPermission(
+                                context!!,
+                                permission
+                            ) == PackageManager.PERMISSION_GRANTED) {
+
+                            val cameraIntent = Intent(MediaStore.ACTION_VIDEO_CAPTURE)
+                            videoFile = VidzUtils.createVideoFile(context!!)
+                            Log.v(tagName, "videoPath: ${videoFile!!.absolutePath}")
+                            videoUri = FileProvider.getUriForFile(
+                                context!!,
+                                "com.benmohammad.vidz.provider",
+                                videoFile!!
+                            )
+
+                            cameraIntent.putExtra(MediaStore.EXTRA_DURATION_LIMIT, 240)
+                            cameraIntent.putExtra(MediaStore.EXTRA_VIDEO_QUALITY, 1)
+                            cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, videoFile)
+                            startActivityForResult(cameraIntent, Constants.RECORD_VIDEO)
+                        } else {
+                                callPermissionSettings()
+                        }
+                    }
+                }
+                return
+            }
+
+            Constants.ADD_ITEMS_IN_STORAGE -> {
+                for(permission in permissions) {
+                    if(ActivityCompat.shouldShowRequestPermissionRationale(activity as Activity, permission)) {
+                        Toast.makeText(context, "Permission denied!!", Toast.LENGTH_SHORT).show()
+                        break
+                    } else {
+                        if(ActivityCompat.checkSelfPermission(
+                                context!!,
+                                permission
+                            ) == PackageManager.PERMISSION_GRANTED) {
+                            itemStorageAction()
+                        } else {
+                            callPermissionSettings()
+                        }
+                    }
+                }
+                return
+            }
+
+        }
     }
 
     override fun onFileProcessed(file: File) {
@@ -612,6 +718,26 @@ class VidzMasterProcessorFragment : Fragment(), VidzBaseCreatorDialogFragment.Ca
             playWhenReady = exoplayer?.playWhenReady
             exoplayer?.release()
             exoplayer = null
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if(SDK_INT > 23 || exoplayer == null) {
+            masterVideoFile?.let {
+                if(!isLargeVideo!!) {
+                    initializePlayer()
+                }
+            }
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if(SDK_INT > 23) {
+            masterVideoFile?.let {
+                initializePlayer()
+            }
         }
     }
 
