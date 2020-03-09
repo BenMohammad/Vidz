@@ -96,7 +96,7 @@ public class VidzThumb {
         return mLastTouchX;
     }
 
-    void setLastTouch(float lastTouchX) {
+    void setLastTouchX(float lastTouchX) {
         this.mLastTouchX = lastTouchX;
     }
 
