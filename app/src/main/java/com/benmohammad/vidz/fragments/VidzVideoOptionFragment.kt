@@ -5,10 +5,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatImageView
 import com.benmohammad.vidz.R
-import com.benmohammad.vidz.interfaces.VidzBaseCreatorDialogFragment
 import com.benmohammad.vidz.interfaces.VidzDialogHelper
 import java.io.File
 

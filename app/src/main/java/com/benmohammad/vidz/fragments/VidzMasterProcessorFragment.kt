@@ -32,7 +32,6 @@ import com.benmohammad.vidz.VidzTrimmerActivity
 import com.benmohammad.vidz.VidzVideoEditor
 import com.benmohammad.vidz.adapter.VidzVideoOptionsAdapter
 import com.benmohammad.vidz.interfaces.VidzVideoOptionsListener
-import com.benmohammad.vidz.interfaces.VidzBaseCreatorDialogFragment
 import com.benmohammad.vidz.interfaces.VidzFFMpegCallback
 import com.benmohammad.vidz.utils.*
 import com.github.hiteshsondhi88.libffmpeg.FFmpeg
@@ -44,7 +43,6 @@ import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
 import com.google.android.exoplayer2.trackselection.TrackSelectionArray
 import com.google.android.exoplayer2.ui.PlayerView
 import com.google.android.exoplayer2.util.Util.*
-import org.jcodec.movtool.Util
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*

@@ -1,5 +1,7 @@
 package com.benmohammad.vidz.trimmer.utils;
 
+import android.util.Log;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
@@ -75,6 +77,24 @@ public final class VidzBackgroundExecutor {
         }
 
         return null;
+    }
+
+    public static synchronized void cancelAll(String id, boolean mayInterruptIfRunning) {
+        for(int i = TASKS.size() - 1; i >= 0; i--) {
+            Task task = TASKS.get(i);
+            if(id.equals(task.id)) {
+                if(task.future != null) {
+                    task.future.cancel(mayInterruptIfRunning);
+                    if(!task.managed.getAndSet(true)) {
+                        task.postExecute();
+                    }
+                } else if (task.executionAsked) {
+                    Log.v(TAG, "A task  with id : " + task.id + " cannot be cancelled");
+                } else {
+                    TASKS.remove(i);
+                }
+            }
+        }
     }
 
 
