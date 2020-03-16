@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit
 
 object VidzVideoUtils {
 
-    fun sectOTime(totalSeconds: Long): String {
+    fun secToTime(totalSeconds: Long): String {
         return String.format(
             "%02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(totalSeconds),
             TimeUnit.MILLISECONDS.toMinutes(totalSeconds) -

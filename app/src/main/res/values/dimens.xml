@@ -2,4 +2,6 @@
 <resources>
     <dimen name="frames_video_height">40dip</dimen>
     <dimen name="progress_video_line_height">2dp</dimen>
+    <dimen name="textLarge">19sp</dimen>
+    <dimen name="textLarge22">22sp</dimen>
 </resources>
