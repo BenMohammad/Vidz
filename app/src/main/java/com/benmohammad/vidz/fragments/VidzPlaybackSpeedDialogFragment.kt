@@ -42,6 +42,7 @@ class VidzPlaybackSpeedDialogFragment: BottomSheetDialogFragment(), VidzDialogHe
         savedInstanceState: Bundle?
     ): View? {
         rootView = inflater.inflate(R.layout.vidz_fragment_playback_speed_dialog, container, false)
+
         return rootView
     }
 
@@ -54,6 +55,7 @@ class VidzPlaybackSpeedDialogFragment: BottomSheetDialogFragment(), VidzDialogHe
         linearLayoutManager = LinearLayoutManager(activity!!.applicationContext)
 
         mContext = context
+
         ivClose.setOnClickListener {
             dismiss()
         }
