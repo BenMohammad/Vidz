@@ -339,7 +339,7 @@ class VidzMasterProcessorFragment : Fragment(), VidzBaseCreatorDialogFragment.Ca
         if(isShow) {
             progresssBar.visibility = View.VISIBLE
             tvVideoProcessing!!.visibility = View.VISIBLE
-            //setProgressValue()
+            setProgressValue()
         } else {
             progresssBar.visibility = View.INVISIBLE
             tvVideoProcessing!!.visibility = View.INVISIBLE
